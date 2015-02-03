@@ -81,7 +81,6 @@ class NovmManager(object):
             name=None,
             cpus=1,
             memsize=1024,
-            init=False,
             nics=None,
             disks=None,
             packs=None,
@@ -96,6 +95,7 @@ class NovmManager(object):
             nofork=False,
             env=None,
             cwd=None,
+            init=False,
             terminal=False,
             command=None):
 
@@ -126,10 +126,6 @@ class NovmManager(object):
 
         # Our extra arguments.
         args = []
-
-        # Are we using a real init?
-        if init:
-            args.extend(["-init"])
 
         # Is our kernel valid?
         if kernel not in self._kernels.list():
@@ -287,6 +283,7 @@ class NovmManager(object):
             command=command,
             nofork=nofork,
             vmmopt=vmmopt,
+            init=init,
             terminal=terminal,
             env=env,
             cwd=cwd)

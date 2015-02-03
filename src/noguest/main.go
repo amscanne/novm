@@ -17,7 +17,6 @@ package main
 import (
 	"flag"
 	"log"
-	"noguest/protocol"
 	"noguest/rpc"
 	"os"
 	"os/exec"
@@ -27,8 +26,8 @@ import (
 // The default control file.
 var control = flag.String("control", "/dev/vport0p0", "control file")
 
-// Should this always run a server.
-var server_fd = flag.Int("serverfd", -1, "run RPC server")
+// Should we mount /dev/pts?
+var skip_pts = flag.Bool("skip_pts", false, "skip mounting /dev/pts")
 
 func mount(fs string, location string) error {
 
@@ -48,76 +47,49 @@ func mount(fs string, location string) error {
 }
 
 func main() {
-	var console *os.File
 
 	// Parse flags.
 	flag.Parse()
 
-	if *server_fd == -1 {
-		// Open the console.
-		if f, err := os.OpenFile(*control, os.O_RDWR, 0); err != nil {
-			log.Fatal("Problem opening console:", err)
-		} else {
-			console = f
-		}
+	// Open the console.
+	console, err := os.OpenFile(*control, os.O_RDWR, 0)
+	if err != nil {
+		log.Fatal("problem opening console:", err)
+	}
 
+	if !*skip_pts {
 		// Make sure devpts is mounted.
 		err := mount("devpts", "/dev/pts")
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal("problem mounting /dev/pts:", err)
 		}
-
-		// Notify novmm that we're ready.
-		buffer := make([]byte, 1, 1)
-		buffer[0] = protocol.NoGuestStatusOkay
-		n, err := console.Write(buffer)
-		if err != nil || n != 1 {
-			log.Fatal(err)
-		}
-
-		// Read our response.
-		n, err = console.Read(buffer)
-		if n != 1 || err != nil {
-			log.Fatal(protocol.UnknownCommand)
-		}
-
-		// Rerun to cleanup argv[0], or create a real init.
-		new_args := make([]string, 0, len(os.Args)+1)
-		new_args = append(new_args, "noguest")
-		new_args = append(new_args, "-serverfd", "0")
-		new_args = append(new_args, os.Args[1:]...)
-
-		switch buffer[0] {
-
-		case protocol.NoGuestCommandRealInit:
-			// Run our noguest server in a new process.
-			proc_attr := &syscall.ProcAttr{
-				Dir:   "/",
-				Env:   os.Environ(),
-				Files: []uintptr{console.Fd(), 1, 2},
-			}
-			_, err := syscall.ForkExec(os.Args[0], new_args, proc_attr)
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			// Exec our real init here in place.
-			err = syscall.Exec("/sbin/init", []string{"init"}, os.Environ())
-			log.Fatal(err)
-
-		case protocol.NoGuestCommandFakeInit:
-			// Since we don't have any init to setup basic
-			// things, like our hostname we do some of that here.
-			syscall.Sethostname([]byte("novm"))
-
-		default:
-			// What the heck is this?
-			log.Fatal(protocol.UnknownCommand)
-		}
-	} else {
-		// Open the defined fd.
-		console = os.NewFile(uintptr(*server_fd), "console")
 	}
+
+	// Notify novmm that we're ready.
+	buffer := []byte{'?'}
+	n, err := console.Write(buffer)
+	if err != nil {
+		log.Fatal("problem writing to console:", err)
+	}
+	if n != 1 {
+		log.Fatal("nil write to console")
+	}
+
+	// Read our response.
+	n, err = console.Read(buffer)
+	if err != nil {
+		log.Fatal("problem reading from console:", err)
+	}
+	if n != 1 {
+		log.Fatal("nil read from console")
+	}
+	if buffer[0] != '!' {
+		log.Fatal("unexpected response:", buffer[0])
+	}
+
+	// Since we don't have any init to setup basic
+	// things, like our hostname we do some of that here.
+	syscall.Sethostname([]byte("novm"))
 
 	// Small victory.
 	log.Printf("~~~ NOGUEST ~~~")

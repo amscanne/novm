@@ -264,7 +264,6 @@ func main() {
 	log.Printf("Starting control server...")
 	control, err := control.NewControl(
 		*control_fd,
-		*real_init,
 		model,
 		vm,
 		tracer,

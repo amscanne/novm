@@ -17,7 +17,6 @@ package control
 import (
 	"net/rpc"
 	"net/rpc/jsonrpc"
-	"noguest/protocol"
 )
 
 func (control *Control) init() {
@@ -26,39 +25,30 @@ func (control *Control) init() {
 
 	// Read our control byte back.
 	n, err := control.proxy.Read(buffer)
-	if n == 1 && err == nil {
-		switch buffer[0] {
-		case protocol.NoGuestStatusOkay:
-			break
-		case protocol.NoGuestStatusFailed:
-			// Something went horribly wrong.
-			control.client_res <- InternalGuestError
-			return
-		default:
-			// This isn't good, who knows what happened?
-			control.client_res <- protocol.UnknownStatus
-			return
-		}
-	} else if err != nil {
-		// An actual error.
+	if err != nil {
+		// Something went horribly wrong.
 		control.client_res <- err
+		return
+	}
+	if n != 1 {
+		// We got nothing.
+		control.client_res <- InternalGuestError
+		return
+	}
+	if buffer[0] != '?' {
+		// This ain't right.
+		control.client_res <- InternalGuestError
 		return
 	}
 
 	// Send our control byte to noguest.
-	// This essentially controls how the guest
-	// will proceed during execution. If it is the
-	// real init process, it will wait for run commands
-	// and execute the given processes inside the VM.
-	// If it is not the real init process, it will fork
-	// and execute the real init before starting to
-	// process any other RPC commands.
-	if control.real_init {
-		buffer[0] = protocol.NoGuestCommandRealInit
-	} else {
-		buffer[0] = protocol.NoGuestCommandFakeInit
-	}
+	buffer[0] = '!'
 	n, err = control.proxy.Write(buffer)
+	if err != nil {
+		// Something went horribly wrong.
+		control.client_res <- err
+		return
+	}
 	if n != 1 {
 		// Can't send anything?
 		control.client_res <- InternalGuestError

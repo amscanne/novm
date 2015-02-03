@@ -93,7 +93,7 @@ class Control(object):
 
         return obj.get("result")
 
-    def run(self, command, env=None, cwd=None, terminal=False):
+    def run(self, command, env=None, cwd=None, init=False, terminal=False):
         if env is None:
             env = ["%s=%s" % (k, v) for (k, v) in list(os.environ.items())]
         if cwd is None:
@@ -109,6 +109,7 @@ class Control(object):
         start_cmd = {
             "command": command,
             "environment": env,
+            "init": init,
             "terminal": terminal,
             "cwd": cwd,
         }

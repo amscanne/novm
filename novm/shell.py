@@ -31,7 +31,6 @@ class NovmShell(object):
             cpus=cli.IntOpt("The number of vcpus."),
             memsize=cli.IntOpt("The member size (in mb)."),
             kernel=cli.StrOpt("The kernel to use."),
-            init=cli.BoolOpt("Use a real init?"),
             nic=cli.ListOpt("Define a network device."),
             disk=cli.ListOpt("Define a block device."),
             pack=cli.ListOpt("Use a given read pack."),
@@ -46,6 +45,7 @@ class NovmShell(object):
             nofork=cli.BoolOpt("Don't fork into the background."),
             env=cli.ListOpt("Specify an environment variable."),
             cwd=cli.StrOpt("The process working directory."),
+            init=cli.BoolOpt("Run the process as init."),
             terminal=cli.BoolOpt("Change the terminal mode."),
             *command):
 
@@ -104,7 +104,6 @@ class NovmShell(object):
             cpus=cpus,
             memsize=memsize,
             kernel=kernel,
-            init=init,
             nics=nic,
             disks=disk,
             repos=repo,
@@ -118,6 +117,7 @@ class NovmShell(object):
             nofork=nofork,
             env=env,
             cwd=cwd,
+            init=init,
             terminal=terminal,
             command=command)
 
@@ -168,6 +168,7 @@ class NovmShell(object):
             name=cli.StrOpt("The instance name."),
             env=cli.ListOpt("Specify an environment variable."),
             cwd=cli.StrOpt("The process working directory."),
+            init=cli.BoolOpt("Run the process as init."),
             terminal=cli.BoolOpt("Change the terminal mode."),
             *command):
 
@@ -182,6 +183,7 @@ class NovmShell(object):
             name=name,
             env=env,
             cwd=cwd,
+            init=init,
             terminal=terminal,
             command=command)
 

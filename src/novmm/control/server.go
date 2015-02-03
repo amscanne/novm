@@ -32,9 +32,6 @@ type Control struct {
 	// The bound control fd.
 	control_fd int
 
-	// Should this instance use a real init?
-	real_init bool
-
 	// Our proxy to the in-guest agent.
 	proxy machine.Proxy
 
@@ -210,7 +207,6 @@ func (control *Control) Serve() {
 
 func NewControl(
 	control_fd int,
-	real_init bool,
 	model *machine.Model,
 	vm *platform.Vm,
 	tracer *loader.Tracer,
@@ -225,7 +221,6 @@ func NewControl(
 	// Create our control object.
 	control := new(Control)
 	control.control_fd = control_fd
-	control.real_init = real_init
 	control.proxy = proxy
 	control.rpc = NewRpc(model, vm, tracer)
 

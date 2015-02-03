@@ -41,6 +41,9 @@ type StartCommand struct {
 	// The working directory.
 	Cwd string `json:"cwd"`
 
+	// Run the process as init?
+	Init bool `json:"init"`
+
 	// Allocate a terminal?
 	Terminal bool `json:"terminal"`
 
@@ -191,6 +194,9 @@ func (server *Server) Start(
 			Setctty: command.Terminal,
 			Ctty:    0,
 		},
+	}
+	if command.Init {
+		proc_attr.Sys.Cloneflags |= syscall.CLONE_NEWPID
 	}
 	proc, err := os.StartProcess(
 		binary,
